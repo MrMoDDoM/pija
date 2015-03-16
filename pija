@@ -14,6 +14,9 @@ parser = argparse.ArgumentParser(description='Analize media files for ' +
 parser.add_argument('files', metavar='file', type=str, nargs='+',
                     help='File to analize.')
 
+parser.add_argument('-P', action='store', default=15,
+                    help='The percentage of skin to determinate a positive.')
+
 parser.add_argument('-R', action='store_const', const=True, default=False,
                     help='Analize recursively.')
 
