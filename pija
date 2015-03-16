@@ -3,6 +3,7 @@
 import os
 import os.path
 import argparse
+import time
 from termcolor import colored
 
 from analizer import analize
@@ -17,6 +18,12 @@ parser.add_argument('files', metavar='file', type=str, nargs='+',
 parser.add_argument('-P', action='store', default=15,
                     help='The percentage of skin to determinate a positive.')
 
+parser.add_argument('-O', action='store_const', const=True, default=False,
+                    help='Show only positive file')
+
+parser.add_argument('-F', action='store_const', const=True, default=False,
+                    help='The output file.')
+
 parser.add_argument('-R', action='store_const', const=True, default=False,
                     help='Analize recursively.')
 
@@ -28,10 +35,19 @@ args = parser.parse_args()
 
 def print_result(path, result):
     if result:
-        print path + ": " + colored(';D', 'green', attrs=['bold'])
-    else:
+        if args.F:
+            out_file.write(path+'\n')
+        else:
+            print path + ": " + colored(';D', 'green', attrs=['bold'])
+    elif not args.O:
         print path + ": " + colored(':(', 'red')
 
+if args.F:
+    try:
+        out_file = open("Pija Result "+ time.strftime("%c")+".txt","w")
+    except IOError:
+        print "Error writin output file! Abort!"
+        exit()
 
 for file_ in args.files:
 
@@ -43,8 +59,7 @@ for file_ in args.files:
 
     if not os.access(file_, os.R_OK):
         print file_ + " can't be read."
-        continue
-
+        contin  
     if os.path.isdir(file_) and not args.R:
         print file_ + " is a folder, see -R option."
         continue
@@ -56,3 +71,6 @@ for file_ in args.files:
                 print_result(path, analize(path))
     else:
         print_result(file_, analize(file_))
+
+if args.F:
+    out_file.close()
