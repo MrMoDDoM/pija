@@ -14,6 +14,7 @@ from key_frame_extractor import get_key_frames
 
 PERCENTAGE_OF_FRAMES_TO_ANALIZE = 0.1
 BYTES_PER_PIXEL = 3
+MIN_SKIN_PERCENTAGE = 0.15
 
 class SkinRegion(object):
 
@@ -50,8 +51,11 @@ class SkinRegion(object):
         )
 
 
-def analize(path):
+def analize(path, min_skin_percentage):
     """Analizes a file, returning True if it contains pornography."""
+
+    global MIN_SKIN_PERCENTAGE
+    MIN_SKIN_PERCENTAGE = min_skin_percentage / 100
 
     try:
         type_ = magic.from_file(path)
@@ -102,7 +106,7 @@ def analize_numpy_array(image):
     """Analize an image as a numpy array, returning True if it contains
     nudity."""
 
-    MIN_SKIN_PERCENTAGE = 0.15
+    #MIN_SKIN_PERCENTAGE = 0.15
 
     image_in_ycbcr = cv2.cvtColor(image, cv2.COLOR_BGR2YCR_CB)
     skin_mask = get_skin_mask(image, image_in_ycbcr)
