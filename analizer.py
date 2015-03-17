@@ -15,6 +15,7 @@ from key_frame_extractor import get_key_frames
 PERCENTAGE_OF_FRAMES_TO_ANALIZE = 0.1
 BYTES_PER_PIXEL = 3
 MIN_SKIN_PERCENTAGE = 0.15
+SKIN_PERCENTAGE = 0
 
 class SkinRegion(object):
 
@@ -57,13 +58,15 @@ def analize(path, min_skin_percentage):
     global MIN_SKIN_PERCENTAGE
     MIN_SKIN_PERCENTAGE = min_skin_percentage / 100
 
+    global SKIN_PERCENTAGE
+
     try:
         type_ = magic.from_file(path)
     except IOError:
-        return False
+        return returnFalse(0)
 
     if type_ is None:
-        return False
+        return returnFalse(0)
 
     type_ = type_.lower()
 
@@ -73,19 +76,24 @@ def analize(path, min_skin_percentage):
     if "image" in type_:
         return analize_image(path)
 
-    return False
+    return returnFalse(p0)
 
 def analize_image(path):
     """Analizes a file, returning True if it contains nudity."""
     image = cv2.imread(path)
 
+    global SKIN_PERCENTAGE
+
     if image is None:
-        return False
+        return returnFalse(0)
 
     return analize_numpy_array(image)
 
 def analize_video(path):
     """Analizes a video, returning True if it contains nudity."""
+
+    print ("VIDEO Analizer NOT IMPLEMENTED YET -- DO NOT USE!!!")
+    return False
 
     vidcap = cv2.VideoCapture(path)
 
@@ -97,7 +105,7 @@ def analize_video(path):
 
         #If we find one porn frame we tag the video as porn, this can be
         #really improved.
-        if has_porn:
+        if has_porn[1]:
             return True
 
     return False
@@ -108,6 +116,8 @@ def analize_numpy_array(image):
 
     #MIN_SKIN_PERCENTAGE = 0.15
 
+    global SKIN_PERCENTAGE
+
     image_in_ycbcr = cv2.cvtColor(image, cv2.COLOR_BGR2YCR_CB)
     skin_mask = get_skin_mask(image, image_in_ycbcr)
 
@@ -116,28 +126,27 @@ def analize_numpy_array(image):
     percentage_of_skin = skin_pixels_count / image_pixels_count
 
     if percentage_of_skin < MIN_SKIN_PERCENTAGE:
-        return False
+        return returnFalse(percentage_of_skin)
 
     regions = get_skin_regions(image_in_ycbcr, skin_mask)
 
     if (regions[0].region_skin_pixels / skin_pixels_count < 0.35) \
         and (regions[1].region_skin_pixels / skin_pixels_count < 0.30) \
         and (regions[2].region_skin_pixels / skin_pixels_count < 0.30):
-        return False
+        return returnFalse(percentage_of_skin)
 
     if (regions[0].region_skin_pixels / skin_pixels_count < 0.45):
-        return False
+        return returnFalse(percentage_of_skin)
 
     if percentage_of_skin < 0.3 and \
         (regions[0].bounding_rectangle_size / image_pixels_count) < 0.55:
-        return False
+        return returnFalse(percentage_of_skin)
 
     if len(regions) > 60 and \
         (regions[0].bounding_rectangle_avarage_pixel_intensity / 255) < 0.25:
+        return returnFalse(percentage_of_skin)
 
-        return False
-
-    return True
+    return returnTrue(percentage_of_skin)
 
 
 def get_skin_mask(image, image_in_ycbcr):
@@ -211,3 +220,13 @@ def get_skin_regions(image, skin_mask):
         regions.append(region)
 
     return sorted(regions, key=lambda r: r.region_skin_pixels, reverse=True)
+
+def returnSkinPercentage(res):
+    global SKIN_PERCENTAGE
+    return SKIN_PERCENTAGE
+
+def returnFalse(percentage):
+    return {'result': False, 'percentage': percentage}
+
+def returnTrue(percentage):
+    return {'result': True, 'percentage': percentage}

@@ -6,23 +6,23 @@ import argparse
 import time
 from termcolor import colored
 
-from analizer import analize
+#from analizer import analize
 
+from analizer import *
 
-parser = argparse.ArgumentParser(description='Analize media files for ' +
-                                'detecting pornography.')
+parser = argparse.ArgumentParser(description='Analize media files for detecting pornography.')
 
 parser.add_argument('files', metavar='file', type=str, nargs='+',
                     help='File to analize.')
 
-parser.add_argument('-p', default='15', type=int,
+parser.add_argument('-sp', metavar='perc.', default='15', type=int,
                     help='The percentage of skin to determinate a positive.')
 
-parser.add_argument('-O', action='store_const', const=True, default=False,
+parser.add_argument('-op', action='store_const', const=True, default=False,
                     help='Show only positive file')
 
 parser.add_argument('-F', action='store_const', const=True, default=False,
-                    help='The output file.')
+                    help='Write output to file.')
 
 parser.add_argument('-R', action='store_const', const=True, default=False,
                     help='Analize recursively.')
@@ -30,17 +30,22 @@ parser.add_argument('-R', action='store_const', const=True, default=False,
 parser.add_argument('-L', action='store_const', const=True, default=False,
                     help='Follow symbolic links.')
 
+parser.add_argument('-c', metavar='folder', action='store',
+                    help='Folder where will be copied positive file')
+
 args = parser.parse_args()
 
+def printInfo(str_out):
+    print colored('[INFO] ' + str_out, 'green')
 
 def print_result(path, result):
-    if result:
+    if result['result']:
         if args.F:
             out_file.write(path+'\n')
         else:
-            print path + ": " + colored(';D', 'green', attrs=['bold'])
-    elif not args.O:
-        print path + ": " + colored(':(', 'red')
+            print path + ": " + colored(str(int(result['percentage']*100)) + '% --> ;D', 'green', attrs=['bold']) #+ colored(result[1], 'yellow')
+    elif not args.op:
+        print path + ": " + colored(str(int(result['percentage']*100)) + '% --> :(', 'red')
 
 if args.F:
     try:
@@ -48,6 +53,8 @@ if args.F:
     except IOError:
         print "Error writin output file! Abort!"
         exit()
+
+printInfo("Skin percentage set to: " + str(args.sp) + "%")
 
 for file_ in args.files:
 
@@ -67,10 +74,11 @@ for file_ in args.files:
     if os.path.isdir(file_):
         for (dirpath, _, filenames) in os.walk(file_, True, None, args.L):
             for name in filenames:
-                path = dirpath + "/" + name
-                print_result(path, analize(path, args.p))
+                path = dirpath + '/' + name
+                print_result(path, analize(path, args.sp))
     else:
-        print_result(file_, analize(file_, args.p))
+        print_result(file_, analize(file_, args.sp))
 
 if args.F:
     out_file.close()
+
