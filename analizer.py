@@ -93,7 +93,7 @@ def analize(path, min_skin_percentage):
     if "image" in type_:
         return analize_image(path)
 
-    return returnFalse(p0)
+    return returnFalse(0)
 
 def analize_image(path):
     """Analizes a file, returning True if it contains nudity."""
