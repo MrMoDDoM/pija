@@ -11,6 +11,8 @@ from scipy import ndimage
 
 from key_frame_extractor import get_key_frames
 
+import os
+
 
 PERCENTAGE_OF_FRAMES_TO_ANALIZE = 0.1
 BYTES_PER_PIXEL = 3
@@ -51,6 +53,21 @@ class SkinRegion(object):
             image[rectangle_slices].take([0], axis=2)
         )
 
+def count_file(file_, L):
+    count = 0
+    for (dirpath, _, filenames) in os.walk(file_, True, None, L):
+            for name in filenames:
+                path = dirpath + '/' + name
+                try:
+                    type_ = magic.from_file(path)
+                except IOError:
+                    print "ERROR COUNTING FILE - PROGRESS BAR MAY BE WRONG!"
+                    return count
+
+                if "image" in type_:
+                    count = count + 1
+
+    return count
 
 def analize(path, min_skin_percentage):
     """Analizes a file, returning True if it contains pornography."""
@@ -226,7 +243,7 @@ def returnSkinPercentage(res):
     return SKIN_PERCENTAGE
 
 def returnFalse(percentage):
-    return {'result': False, 'percentage': percentage}
+    return [False, percentage]
 
 def returnTrue(percentage):
-    return {'result': True, 'percentage': percentage}
+    return [True, percentage]
