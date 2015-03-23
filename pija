@@ -4,6 +4,7 @@ import os
 import os.path
 import argparse
 import time
+import sys
 from termcolor import colored
 
 #from analizer import analize
@@ -41,12 +42,34 @@ parser.add_argument('-c', metavar='folder', action='store',
 
 args = parser.parse_args()
 
+def update_progress(progress):
+    barLength = 20 # Modify this to change the length of the progress bar
+    status = ""
+    if isinstance(progress, int):
+        progress = float(progress)
+    if not isinstance(progress, float):
+        progress = 0
+        status = "error: progress var must be float\r\n"
+    if progress < 0:
+        progress = 0
+        status = "Halt...\r\n"
+    if progress >= 1:
+        progress = 1
+        status = "Done...\r\n"
+    block = int(round(barLength*progress))
+    text = colored("\rProgress: [{0}] {1}% {2}".format( "#"*block + "-"*(barLength-block), progress*100, status), 'yellow')
+
+    sys.stdout.write(text)
+    sys.stdout.flush()
+
 def printHTML(result):
     try:
         #out_file = open("Pija Result "+ time.strftime("%c")+".html","w")
         out_file = open("Pija_Result.html","w")
     except IOError:
         print "Error writing HTML output file! Do we have the rigth permissions?"
+
+    printInfo("Result writed to "+out_file.name)
 
     out_file.write(html_start)
     for result_list in result:
@@ -60,15 +83,21 @@ def printHTML(result):
     out_file.close()
 
 def printTerminal(results):
+    print "\n\n"
     for result_list in results:
         if result_list[1]:
             print result_list[0] + ": " + colored(';D', 'green', attrs=['bold'])
         else:
             print result_list[0] + ": " + colored(':(', 'red')
 
+    print "\n"
+
 
 def printInfo(str_out):
     print colored('[INFO] ' + str_out, 'green')
+
+def printError(str_out):
+    print colored('[ERROR] ' + str_out, 'red', attrs=['bold'])
 
 def print_result(results):
     if args.F:
@@ -95,15 +124,24 @@ for file_ in args.files:
         print file_ + " is a folder, see -R option."
         continue
 
-    if os.path.isdir(file_):
-        printInfo("Counting file, please wait...")
-        printInfo(str(count_file(file_, args.L)) + " will be analized...")
-        for (dirpath, _, filenames) in os.walk(file_, True, None, args.L):
-            for name in filenames:
-                path = dirpath + '/' + name
-                analize_result = analize(path,args.sp)
-                results.append([path, analize_result[0], analize_result[1]])
+    try: 
+        analized = 0.0
+        if os.path.isdir(file_):
+            printInfo("Counting file, please wait...")
+            to_analize = count_file(file_, args.L)
+            printInfo(str(to_analize) + " will be analized...")
+            for (dirpath, _, filenames) in os.walk(file_, True, None, args.L):
+                for name in filenames:
+                    path = dirpath + '/' + name
+                    analize_result = analize(path,args.sp)
+                    results.append([path, analize_result[0], analize_result[1]])
+                    analized = analized + 1
+                    update_progress(analized/to_analize)
+            print_result(results)
+        else:
+            analize_result = analize(file_,args.sp)
+            print_result([[file_, analize_result[0], analize_result[1]]]) #this is a list of list - we are using this hack to maitain compatibility with the folder cases
+    except KeyboardInterrupt:
+        print "\n\n"
+        printError("Ctlr+C pressed.. Printing result and exit!")
         print_result(results)
-    else:
-        analize_result = analize(file_,args.sp)
-        print_result([[file_, analize_result[0], analize_result[1]]]) #this is a list of list - we are using this hack to maitain compatibility with the folder cases

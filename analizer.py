@@ -63,6 +63,9 @@ def count_file(file_, L):
                 except IOError:
                     print "ERROR COUNTING FILE - PROGRESS BAR MAY BE WRONG!"
                     return count
+		except UnicodeDecodeError:
+			print "GENERAL ERROR MAGIC.PY"
+			continue
 
                 if "image" in type_:
                     count = count + 1
@@ -81,6 +84,9 @@ def analize(path, min_skin_percentage):
         type_ = magic.from_file(path)
     except IOError:
         return returnFalse(0)
+    except UnicodeDecodeError:
+	type_ = None
+	print "ANOTHER GENERAL ERROR MAGIC.PY"
 
     if type_ is None:
         return returnFalse(0)
