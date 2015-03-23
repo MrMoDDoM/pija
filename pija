@@ -42,7 +42,62 @@ parser.add_argument('-c', metavar='folder', action='store',
 
 args = parser.parse_args()
 
+def analize(path, min_skin_percentage):
+    """Analizes a file, returning True if it contains pornography."""
+
+    global MIN_SKIN_PERCENTAGE
+    MIN_SKIN_PERCENTAGE = min_skin_percentage / 100
+
+    global SKIN_PERCENTAGE
+
+    try:
+        type_ = magic.from_file(path)
+    except IOError:
+        return returnFalse(0)
+    except UnicodeDecodeError:
+        printError(path+" will be ignored (UnicodeDecodeError)")
+        type_ = None
+
+    if type_ is None:
+        return returnFalse(0)
+
+    type_ = type_.lower()
+
+    if "video" in type_:
+        return analize_video(path)
+
+    if "image" in type_:
+        return analize_image(path)
+
+    return returnFalse(0)
+
+#With this function, we can count file that will be analized
+#Is a good practice to determinate how much work we have to do...
+def count_file(file_, L):
+    """Count all the file that will be analized, returning a list of path"""
+
+    count = []
+    for (dirpath, _, filenames) in os.walk(file_, True, None, L):
+            for name in filenames:
+                path = dirpath + '/' + name
+                try:
+                    type_ = magic.from_file(path)
+                except IOError:
+                    printError("ERROR COUNTING FILE - PROGRESS BAR MAY BE WRONG!")
+                    return count
+                except UnicodeDecodeError:
+                    printError(path + " will be ignored! ( UnicodeDecodeError )")
+                    continue
+
+                if "image" in type_:
+                    count.append(path)
+
+    return count
+
+#Function to print a useful progress bar
 def update_progress(progress):
+    """Drive a progress bar"""
+
     barLength = 20 # Modify this to change the length of the progress bar
     status = ""
     if isinstance(progress, int):
@@ -62,7 +117,9 @@ def update_progress(progress):
     sys.stdout.write(text)
     sys.stdout.flush()
 
+#Print HTML formatted result to a file
 def printHTML(result):
+    """Print HTML formated result to a file"""
     try:
         #out_file = open("Pija Result "+ time.strftime("%c")+".html","w")
         out_file = open("Pija_Result.html","w")
@@ -99,6 +156,7 @@ def printInfo(str_out):
 def printError(str_out):
     print colored('[ERROR] ' + str_out, 'red', attrs=['bold'])
 
+#Function to decide where and how print the result
 def print_result(results):
     if args.F:
         printHTML(results)
@@ -128,20 +186,18 @@ for file_ in args.files:
         analized = 0.0
         if os.path.isdir(file_):
             printInfo("Counting file, please wait...")
-            to_analize = count_file(file_, args.L)
-            printInfo(str(to_analize) + " will be analized...")
-            for (dirpath, _, filenames) in os.walk(file_, True, None, args.L):
-                for name in filenames:
-                    path = dirpath + '/' + name
-                    analize_result = analize(path,args.sp)
-                    results.append([path, analize_result[0], analize_result[1]])
-                    analized = analized + 1
-                    update_progress(analized/to_analize)
-            print_result(results)
+            to_analize = count_file(file_, args.L) #We store all the file's path to analize
+            printInfo(str(len(to_analize)) + " will be analized...")
+            for path in to_analize:    
+                analize_result = analize(path,args.sp) #We analize the path
+                results.append([path, analize_result[0], analize_result[1]]) #Append the result
+                analized = analized + 1
+                update_progress(analized/len(to_analize)) #Update the progress bar
+            print_result(results) #Only when all the path are analize, we print the result
         else:
             analize_result = analize(file_,args.sp)
             print_result([[file_, analize_result[0], analize_result[1]]]) #this is a list of list - we are using this hack to maitain compatibility with the folder cases
-    except KeyboardInterrupt:
+    except KeyboardInterrupt: #Catchs interrupt signal and prints the result
         print "\n\n"
-        printError("Ctlr+C pressed.. Printing result and exit!")
+        printError("Ctlr+C pressed.. Printing result and exit!") 
         print_result(results)

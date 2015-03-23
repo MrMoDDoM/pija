@@ -53,54 +53,6 @@ class SkinRegion(object):
             image[rectangle_slices].take([0], axis=2)
         )
 
-def count_file(file_, L):
-    count = 0
-    for (dirpath, _, filenames) in os.walk(file_, True, None, L):
-            for name in filenames:
-                path = dirpath + '/' + name
-                try:
-                    type_ = magic.from_file(path)
-                except IOError:
-                    print "ERROR COUNTING FILE - PROGRESS BAR MAY BE WRONG!"
-                    return count
-		except UnicodeDecodeError:
-			print "GENERAL ERROR MAGIC.PY"
-			continue
-
-                if "image" in type_:
-                    count = count + 1
-
-    return count
-
-def analize(path, min_skin_percentage):
-    """Analizes a file, returning True if it contains pornography."""
-
-    global MIN_SKIN_PERCENTAGE
-    MIN_SKIN_PERCENTAGE = min_skin_percentage / 100
-
-    global SKIN_PERCENTAGE
-
-    try:
-        type_ = magic.from_file(path)
-    except IOError:
-        return returnFalse(0)
-    except UnicodeDecodeError:
-	type_ = None
-	print "ANOTHER GENERAL ERROR MAGIC.PY"
-
-    if type_ is None:
-        return returnFalse(0)
-
-    type_ = type_.lower()
-
-    if "video" in type_:
-        return analize_video(path)
-
-    if "image" in type_:
-        return analize_image(path)
-
-    return returnFalse(0)
-
 def analize_image(path):
     """Analizes a file, returning True if it contains nudity."""
     image = cv2.imread(path)
