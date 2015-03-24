@@ -67,13 +67,13 @@ def analize_image(path):
 def analize_video(path):
     """Analizes a video, returning True if it contains nudity."""
 
-    print ("VIDEO Analizer NOT IMPLEMENTED YET -- DO NOT USE!!!")
-    return False
+    print path
 
     vidcap = cv2.VideoCapture(path)
 
     if vidcap is None:
-        return False
+        print "Video: none"
+        return returnFalse(0)
 
     for frame in get_key_frames(vidcap):
         has_porn = analize_numpy_array(frame)
@@ -81,9 +81,11 @@ def analize_video(path):
         #If we find one porn frame we tag the video as porn, this can be
         #really improved.
         if has_porn[1]:
-            return True
+            print "Video: pornn frame found!"
+            return has_porn
 
-    return False
+    print "Video: no porn frame found"
+    return returnFalse(0)
 
 def analize_numpy_array(image):
     """Analize an image as a numpy array, returning True if it contains

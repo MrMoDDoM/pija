@@ -61,13 +61,16 @@ def analize(path, min_skin_percentage):
     if type_ is None:
         return returnFalse(0)
 
-    type_ = type_.lower()
+    #type_ = type_.lower()
 
     if "video" in type_:
         return analize_video(path)
 
     if "image" in type_:
         return analize_image(path)
+
+    if "MPEG" in type_:
+        return analize_video(path)
 
     return returnFalse(0)
 
@@ -89,8 +92,16 @@ def count_file(file_, L):
                     printError(path + " will be ignored! ( UnicodeDecodeError )")
                     continue
 
+                if "MPEG" in type_:
+                    count.append(path)
+
                 if "image" in type_:
                     count.append(path)
+
+                if "video" in type_:
+                    count.append(path)
+
+
 
     return count
 
@@ -103,17 +114,14 @@ def update_progress(progress):
     if isinstance(progress, int):
         progress = float(progress)
     if not isinstance(progress, float):
-        progress = 0
         status = "error: progress var must be float\r\n"
     if progress < 0:
-        progress = 0
-        status = "Halt...\r\n"
+        status = "Halt...\n"
     if progress >= 1:
         progress = 1
-        status = "Done...\r\n"
+        status = "Done...\n"
     block = int(round(barLength*progress))
     text = colored("\rProgress: [{0}] {1}% {2}".format( "#"*block + "-"*(barLength-block), progress*100, status), 'yellow')
-
     sys.stdout.write(text)
     sys.stdout.flush()
 
@@ -140,7 +148,9 @@ def printHTML(result):
     out_file.close()
 
 def printTerminal(results):
-    print "\n\n"
+    printInfo("Display results in 5 seconds...")
+    time.sleep(5)
+    print "\n"
     for result_list in results:
         if result_list[1]:
             print result_list[0] + ": " + colored(';D', 'green', attrs=['bold'])
@@ -188,13 +198,16 @@ for file_ in args.files:
             printInfo("Counting file, please wait...")
             to_analize = count_file(file_, args.L) #We store all the file's path to analize
             printInfo(str(len(to_analize)) + " will be analized...")
+
             for path in to_analize:    
                 analize_result = analize(path,args.sp) #We analize the path
                 results.append([path, analize_result[0], analize_result[1]]) #Append the result
-                analized = analized + 1
+                analized = analized + 1 #Increment the counter
                 update_progress(analized/len(to_analize)) #Update the progress bar
+
             print_result(results) #Only when all the path are analize, we print the result
         else:
+            print analize_video(file_)
             analize_result = analize(file_,args.sp)
             print_result([[file_, analize_result[0], analize_result[1]]]) #this is a list of list - we are using this hack to maitain compatibility with the folder cases
     except KeyboardInterrupt: #Catchs interrupt signal and prints the result
